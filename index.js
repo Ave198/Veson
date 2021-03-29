@@ -1,91 +1,48 @@
-const fs = require('fs');                               // Loads the Filesystem library
-const Discord = require('discord.js');                  // Loads the discord API library
-const { prefix, token } = require('./config.json');     // Loads the "token" and "prefix" values from the config file
-
-const client = new Discord.Client(); // Initiates the client
-client.commands = new Discord.Collection(); // Creates an empty list in the client object to store all commands
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js')); // Loads the code for each command from the "commands" folder
-
-// Loops over each file in the command folder and sets the commands to respond to their name
-for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    client.commands.set(command.name, command);
-}
-
-const cooldowns = new Discord.Collection(); // Creates an empty list for storing timeouts so people can't spam with commands
-
-// Starts the bot and makes it begin listening for commands.
-client.on('ready', () => {
-    console.log('Bot Online');
-});
-
-/**
- * This function controls how the bot reacts to messages it receives
+/*
+ *   Copyright (c) 2020 routerabfrage
+ *   All rights reserved.
+ *   https://github.com/routerabfrage/License
  */
-client.on('message', message => {
-    // Ignore bot messages and messages that dont start with the prefix defined in the config file
-    if(!message.content.startsWith(prefix) || message.author.bot) return;
+// jshint esversion: 8
+const Discord = require("discord.js");
+const client = new Discord.Client();
 
-    // Split commands and arguments from message so they can be passed to functions
-    const args = message.content.slice(prefix.length).split(/ +/);
-    const commandName = args.shift().toLowerCase();
+const fs = require("fs");
 
-    // If the command isn't in the  command folder, move on
-    const command = client.commands.get(commandName)
-        || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
-    if(!command) return;
+const Enmap = require("enmap");
 
-        // If the command requires arguments, make sure they're there.
-        if (command.args && !args.length) {
-            let reply = 'That command requires more details!';
+const config = require("./config.json");
+client.config = config;
 
-            // If we have details on how to use the args, provide them
-            if (command.usage) {
-                reply += `\nThe proper usage would be: \`${prefix}${command.name} ${command.usage}\``;
-            }
+client.commands = new Enmap();
 
-            // Send a reply from the bot about any error encountered
-            return message.channel.send(reply);
-        }
+console.log("------------------------------------------------");
 
-    /**
-     * The following block of code handles "cooldowns" making sure that users can only use a command every so often.
-     * This is helpful for commands that require loading time or computation, like image requests.
-     */
-    if(!cooldowns.has(command.name)) {
-        cooldowns.set(command.name, new Discord.Collection());
-    }
-
-    const now = Date.now();
-    const timestamps = cooldowns.get(command.name);
-    const cooldownAmount = (command.cooldown || 3 ) * 1000;
-
-    if(!timestamps.has(message.author.id)) {
-        timestamps.set(message.author.id, now);
-        setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
-    } else {
-        const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
-
-        if(now < expirationTime) {
-            const timeLeft = (expirationTime - now) / 1000;
-            return message.reply(`Whoa! You're sending commands too fast! Please wait ${timeLeft.toFixed(1)} more second(s) before running \`${command.name}\` again!`);
-        }
-
-        timestamps.set(message.author.id, now);
-        setTimeout(() => timestamps.delete(message.author.id), cooldownAmount)
-    }
-    /**
-     * End cooldown code
-     */
-
-    try {
-        // Run the command
-        command.execute(message, args);
-    } catch(error) {
-        console.error(error);
-        message.reply('Sorry! I ran into an error trying to do that!');
-    }
-
+fs.readdir("./events/", (err, files) => {
+  if (err) return console.error;
+  files.forEach((file) => {
+    if (!file.endsWith(".js")) return;
+    const evt = require(`./events/${file}`);
+    let evtName = file.split(".")[0];
+    console.log(`Loaded event '${evtName}'`);
+    client.on(evtName, evt.bind(null, client));
+  });
+  console.log("------------------------------------------------");
 });
 
-client.login(token); // Log the bot in using the token provided in the config file
+fs.readdir("./commands/", async (err, files) => {
+  files.forEach((file) => {
+    if (!file.endsWith(".js")) return;
+    let props = require(`./commands/${file}`);
+    let cmdName = file.split(".")[0];
+    console.log(`Loaded Command '${cmdName}'`);
+    client.commands.set(cmdName, props);
+  });
+  console.log("------------------------------------------------");
+});
+
+process.on("unhandledRejection", (error) => {
+  console.error("Unhandled promise rejection:", error);
+});
+
+client.login(config.token || process.env.TOKEN);
