@@ -1,6 +1,9 @@
 const { ShardingManager } = require("discord.js");
 const config = require("./informations/config.json");
 const manager = new ShardingManager('./main.js',
+bot.on("ready", function (){
+	console.log("je suis connecté")
+} )
  {
 	totalShards: "auto",
   	respawn: true,
