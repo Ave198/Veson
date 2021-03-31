@@ -9,4 +9,4 @@ Veson.on('message', message =>{
      };
      })
 
-    Veson.login(process.env.BOT_TOKEN)
+    Veson.login(process.env.VESON_TOKEN)
