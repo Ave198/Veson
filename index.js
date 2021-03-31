@@ -1,13 +1,12 @@
 const Discord = require('discord.js')
-const veson = new Discord.Client()
+const Veson = new Discord.Client()
 
-veson.on('ready', () => {
+Veson.on('ready', () => {
     console.log('Connecté!')})
-veson.on('message', message =>{
+Veson.on('message', message =>{
   if(message.content.startsWith('ping)){
   message.channel.send('pong!')
      };
      })
-          Client.login(process.env.BOT_TOKEN)
 
-    veson.login(process.env.BOT_TOKEN)
+    Veson.login(process.env.BOT_TOKEN)
