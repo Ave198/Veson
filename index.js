@@ -8,4 +8,4 @@ bot.on('message', message =>{
   message.channel.send('pong!')
      };
      })
-    bot.login('ODI2MTU2Mzc1ODk2NzUyMTI4.YGIYFQ.ESxFbfanT8Yum3TRj2Th2KScGQE')
+    bot.login(process.env.BOT_TOKEN)
